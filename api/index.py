@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 from google import genai
 import os
 
@@ -45,11 +45,6 @@ Assistant: "I'm sorry — I'm limited to the Harry Potter movies only, so I can'
 
 """
 
-@app.route("/")
-def home():
-    # Serve index.html from public folder
-    return send_file("public/index.html")
-
 @app.route("/api/chat", methods=["POST"])
 def chat():
     data = request.get_json(force=True)
@@ -87,6 +82,3 @@ def chat():
 @app.route("/health")
 def health():
     return jsonify({"ok": True})
-
-# Vercel expects the app object to be available
-# No if __name__ == "__main__" needed for Vercel
