@@ -84,4 +84,8 @@ def chat():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.get("/health")
+def health():
+    return jsonify({"ok": True})
+
 
