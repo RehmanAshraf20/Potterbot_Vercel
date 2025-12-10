@@ -1,11 +1,16 @@
-# secrets
+# Environment variables
 .env
+.env.local
 
-# python cache
+# Python
 __pycache__/
-*.pyc
-*.pyo
-
-# virtual environments
-.venv/
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
+env/
+ENV/
+
+# Vercel
+.vercel
