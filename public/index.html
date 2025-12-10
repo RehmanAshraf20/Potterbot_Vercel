@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini Chatbot</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    </style>
+  </head>
+
+  <body class="bg-slate-100">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b bg-slate-50">
+          <h1 class="text-xl font-semibold text-slate-800">Gemini Chatbot</h1>
+          <p class="text-sm text-slate-500">Flask + Gemini API + Tailwind</p>
+        </div>
+
+        <!-- Chat area -->
+        <div id="chatArea"
+             class="flex-1 p-6 space-y-4 overflow-y-auto bg-white"
+             style="height: 60vh;">
+          
+          <!-- Welcome message -->
+          <div class="flex items-start gap-2">
+            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">
+              G
+            </div>
+            <div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%]">
+              <p class="text-slate-800 text-sm">
+                Hey! I’m your Gemini chatbot. Ask me anything 😊
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input area -->
+        <div class="p-4 border-t bg-slate-50">
+          <form id="chatForm" class="flex gap-2">
+            <input
+              id="userInput"
+              type="text"
+              placeholder="Type your message..."
+              class="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              autocomplete="off"
+            />
+            <button
+              type="submit"
+              class="rounded-xl bg-indigo-600 text-white px-5 py-3 text-sm font-medium hover:bg-indigo-700 active:scale-[0.98] transition"
+            >
+              Send
+            </button>
+          </form>
+
+          <p class="text-xs text-slate-500 mt-2">
+            Press Enter to send.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline JS -->
+    <script>
+      const chatForm = document.getElementById("chatForm");
+      const userInput = document.getElementById("userInput");
+      const chatArea = document.getElementById("chatArea");
+
+      let history = [];
+
+      function scrollToBottom() {
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function addMessage(role, text) {
+        const wrapper = document.createElement("div");
+
+        if (role === "user") {
+          wrapper.className = "flex items-start gap-2 justify-end";
+          wrapper.innerHTML = `
+            <div class="bg-indigo-600 text-white rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap">
+              <p class="text-sm">${escapeHtml(text)}</p>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-sm font-bold">
+              U
+            </div>
+          `;
+        } else {
+          wrapper.className = "flex items-start gap-2";
+          wrapper.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">
+              G
+            </div>
+            <div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap">
+              <p class="text-slate-800 text-sm">${escapeHtml(text)}</p>
+            </div>
+          `;
+        }
+
+        chatArea.appendChild(wrapper);
+        scrollToBottom();
+      }
+
+      function addTypingBubble() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-start gap-2";
+        wrapper.innerHTML = `
+          <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">
+            G
+          </div>
+          <div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%]">
+            <p class="text-slate-500 text-sm italic">Typing...</p>
+          </div>
+        `;
+        chatArea.appendChild(wrapper);
+        scrollToBottom();
+        return () => wrapper.remove();
+      }
+
+      async function sendToBackend(message) {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, history }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Request failed");
+        }
+
+        return res.json();
+      }
+
+      chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        userInput.value = "";
+        userInput.focus();
+
+        addMessage("user", message);
+        history.push({ role: "user", text: message });
+
+        const removeTyping = addTypingBubble();
+        userInput.disabled = true;
+
+        try {
+          const data = await sendToBackend(message);
+          const reply = data.reply || "(no reply)";
+
+          removeTyping();
+          addMessage("model", reply);
+
+          history.push({ role: "model", text: reply });
+        } catch (err) {
+          removeTyping();
+          addMessage("model", "⚠️ Error:\n" + err.message);
+        } finally {
+          userInput.disabled = false;
+          userInput.focus();
+        }
+      });
+    </script>
+  </body>
+</html>
