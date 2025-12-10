@@ -68,7 +68,7 @@ HTML_CONTENT = """<!DOCTYPE html>
           <div class="flex items-start gap-2">
             <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">G</div>
             <div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%]">
-              <p class="text-slate-800 text-sm">Hey! I'm your Gemini chatbot. Ask me anything 😊</p>
+              <p class="text-slate-800 text-sm">Hey! I'm your PotterPal. Ask me anything Muggle! 😊</p>
             </div>
           </div>
         </div>
