@@ -11,37 +11,60 @@ if not GEMINI_API_KEY:
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 MODEL_NAME = "gemini-2.5-flash"
-SYSTEM_INSTRUCTION = """You are "PotterPal," a friendly, expert chatbot dedicated ONLY to the Harry Potter MOVIE series (the 8 Warner Bros. films).
+SYSTEM_INSTRUCTION = """You are "Chef Ammi," a warm, knowledgeable Pakistani recipe chatbot that specializes in authentic Pakistani cuisine and home cooking.
 
-Scope / Allowed content:
-- You may answer questions about: plot, characters, spells, creatures, objects, locations, timelines, themes, dialogue moments, actors, directors, soundtracks, behind-the-scenes facts, and differences BETWEEN the movies.
-- Treat the MOVIES as the single source of truth. When helpful, specify which movie a detail comes from.
-- You may discuss real-world film production info (casting, release order, filmmaking choices) as long as it directly relates to the Harry Potter films.
+Your Core Purpose:
+- Help users discover delicious Pakistani recipes based on ingredients they have available
+- Provide authentic, traditional Pakistani recipes with clear instructions
+- Suggest creative ways to use grocery items in Pakistani dishes
+- Focus exclusively on Pakistani cuisine (Punjabi, Sindhi, Balochi, Pashtun, Muhajir, Kashmiri traditions)
 
-Strict Restrictions:
-- Do NOT answer questions that rely on or primarily reference the books, video games, stage play ("Cursed Child"), Fantastic Beasts films, theme parks, fanfiction, or any non-movie canon.
-- If the user asks about something outside the 8 Harry Potter movies, you must refuse politely and steer back to movie-only topics.
+When Users Share Ingredients:
+- Ask clarifying questions about quantities, dietary restrictions, spice tolerance, and cooking time available
+- Suggest 2-3 recipe options that match their ingredients
+- Prioritize recipes that use most of their available ingredients
+- Mention any missing key ingredients and offer substitutions when possible
+- Consider common Pakistani pantry staples (assume they have: salt, oil, water, basic spices)
 
-Refusal behavior:
-- Be warm and respectful.
-- Briefly say you're limited to the Harry Potter movie series.
-- Offer to answer a related movie-franchise question instead.
-- Do not provide any part of the out-of-scope answer.
+Recipe Format:
+When providing a recipe, always include:
+1. Recipe Name (in English and Urdu if relevant)
+2. Prep Time & Cook Time
+3. Servings
+4. Ingredients List (with measurements)
+5. Step-by-Step Instructions (clear and numbered)
+6. Chef's Tips (optional: shortcuts, variations, serving suggestions)
+7. Common Pairings (what to serve it with)
 
-Answer style:
-- Be friendly, enthusiastic, and welcoming.
-- Answer every in-scope question in clear detail.
-- Use headings or bullet points when it improves readability.
-- If the question is ambiguous, make a reasonable assumption based on the films and say what you assumed.
-- If you're unsure about a movie detail, say so honestly rather than inventing.
+Your Personality:
+- Warm and motherly, like a Pakistani Ammi (mother) teaching cooking
+- Use occasional Urdu food terms (translate them in parentheses)
+- Be encouraging and patient
+- Share cultural context and family cooking traditions when relevant
+- Get excited about good food combinations!
 
-Conversation steering:
-- Always try to keep the conversation centered on the movies.
-- End most answers with a short, relevant follow-up question (e.g., "Want the scene breakdown from the film?") unless the user clearly wants to stop.
+Dietary & Preferences:
+- Always ask about dietary restrictions (vegetarian, halal concerns, allergies)
+- Offer healthier alternatives when requested
+- Suggest time-saving options for busy families
+- Accommodate spice levels (mild, medium, spicy)
 
-Example refusal:
-User: "What happens in Chapter 12 of the book?"
-Assistant: "I'm sorry — I'm limited to the Harry Potter movies only, so I can't help with book-specific chapters. If you want, ask me about the corresponding moment in the films and I'll gladly dive in!"
+Restrictions:
+- ONLY provide Pakistani recipes - if asked about other cuisines, politely redirect
+- Don't provide recipes for non-halal ingredients unless specifically requested
+- Keep recipes practical for home cooking (no restaurant-level complexity)
+
+Example Interaction:
+User: "I have chicken, tomatoes, and onions"
+You: "MashaAllah! Great ingredients! 🍗 I can suggest some delicious options:
+
+Could you tell me:
+- How much chicken do you have?
+- Do you have yogurt and basic spices (garam masala, haldi, lal mirch)?
+- How spicy do you like your food?
+- How much time do you have for cooking?
+
+Based on what you have, I'm thinking: Chicken Karahi, Chicken Curry, or even a quick Chicken Tikka!"
 
 """
 
@@ -50,34 +73,36 @@ HTML_CONTENT = """<!DOCTYPE html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PotterPal</title>
+    <title>Chef Ammi - Pakistani Recipe Bot</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
     </style>
   </head>
-  <body class="bg-slate-100">
+  <body class="bg-gradient-to-br from-orange-50 to-green-50">
     <div class="min-h-screen flex items-center justify-center p-4">
       <div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
-        <div class="px-6 py-4 border-b bg-slate-50">
-          <h1 class="text-xl font-semibold text-slate-800">Gemini Chatbot</h1>
-          <p class="text-sm text-slate-500">Flask + Gemini API + Tailwind</p>
+        <div class="px-6 py-4 border-b bg-gradient-to-r from-green-600 to-orange-500">
+          <h1 class="text-xl font-semibold text-white">🍲 Chef Ammi</h1>
+          <p class="text-sm text-green-50">Your Pakistani Recipe Assistant</p>
         </div>
         <div id="chatArea" class="flex-1 p-6 space-y-4 overflow-y-auto bg-white" style="height: 60vh;">
           <div class="flex items-start gap-2">
-            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">G</div>
-            <div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%]">
-              <p class="text-slate-800 text-sm">Hey! I'm your PotterPal. Ask me anything Muggle! 😊</p>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-orange-500 text-white flex items-center justify-center text-sm font-bold">👩‍🍳</div>
+            <div class="bg-gradient-to-r from-green-50 to-orange-50 rounded-2xl px-4 py-2 max-w-[80%]">
+              <p class="text-slate-800 text-sm">Assalam o Alaikum! 🌙 I'm Chef Ammi, your Pakistani recipe helper. Tell me what ingredients you have, and I'll suggest delicious desi recipes! 🍛</p>
             </div>
           </div>
         </div>
-        <div class="p-4 border-t bg-slate-50">
+        <div class="p-4 border-t bg-gradient-to-r from-green-50 to-orange-50">
           <form id="chatForm" class="flex gap-2">
-            <input id="userInput" type="text" placeholder="Type your message..." class="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" autocomplete="off" />
-            <button type="submit" class="rounded-xl bg-indigo-600 text-white px-5 py-3 text-sm font-medium hover:bg-indigo-700 active:scale-[0.98] transition">Send</button>
+            <input id="userInput" type="text" placeholder="e.g., I have chicken, tomatoes, and onions..." class="flex-1 rounded-xl border border-green-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" autocomplete="off" />
+            <button type="submit" class="rounded-xl bg-gradient-to-r from-green-600 to-orange-500 text-white px-5 py-3 text-sm font-medium hover:from-green-700 hover:to-orange-600 active:scale-[0.98] transition">Send</button>
           </form>
-          <p class="text-xs text-slate-500 mt-2">Press Enter to send.</p>
+          <p class="text-xs text-slate-500 mt-2">
+            💡 Tip: Tell me what ingredients you have or ask for a specific Pakistani dish!
+          </p>
         </div>
       </div>
     </div>
@@ -94,10 +119,10 @@ HTML_CONTENT = """<!DOCTYPE html>
         const wrapper = document.createElement("div");
         if (role === "user") {
           wrapper.className = "flex items-start gap-2 justify-end";
-          wrapper.innerHTML = '<div class="bg-indigo-600 text-white rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap"><p class="text-sm">' + escapeHtml(text) + '</p></div><div class="w-8 h-8 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-sm font-bold">U</div>';
+          wrapper.innerHTML = '<div class="bg-gradient-to-r from-green-600 to-orange-500 text-white rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap"><p class="text-sm">' + escapeHtml(text) + '</p></div><div class="w-8 h-8 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-sm font-bold">👤</div>';
         } else {
           wrapper.className = "flex items-start gap-2";
-          wrapper.innerHTML = '<div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">G</div><div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap"><p class="text-slate-800 text-sm">' + escapeHtml(text) + '</p></div>';
+          wrapper.innerHTML = '<div class="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-orange-500 text-white flex items-center justify-center text-sm font-bold">👩‍🍳</div><div class="bg-gradient-to-r from-green-50 to-orange-50 rounded-2xl px-4 py-2 max-w-[80%] whitespace-pre-wrap"><p class="text-slate-800 text-sm">' + escapeHtml(text) + '</p></div>';
         }
         chatArea.appendChild(wrapper);
         scrollToBottom();
@@ -105,7 +130,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       function addTypingBubble() {
         const wrapper = document.createElement("div");
         wrapper.className = "flex items-start gap-2";
-        wrapper.innerHTML = '<div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-bold">G</div><div class="bg-slate-100 rounded-2xl px-4 py-2 max-w-[80%]"><p class="text-slate-500 text-sm italic">Typing...</p></div>';
+        wrapper.innerHTML = '<div class="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-orange-500 text-white flex items-center justify-center text-sm font-bold">👩‍🍳</div><div class="bg-gradient-to-r from-green-50 to-orange-50 rounded-2xl px-4 py-2 max-w-[80%]"><p class="text-slate-500 text-sm italic">Chef Ammi is cooking up a recipe... 🍳</p></div>';
         chatArea.appendChild(wrapper);
         scrollToBottom();
         return () => wrapper.remove();
