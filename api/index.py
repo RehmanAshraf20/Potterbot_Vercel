@@ -111,6 +111,11 @@ HTML_CONTENT = """<!DOCTYPE html>
       const userInput = document.getElementById("userInput");
       const chatArea = document.getElementById("chatArea");
       let history = [];
+      
+      // Check URL parameters for pre-populated ingredients
+      const urlParams = new URLSearchParams(window.location.search);
+      const preloadedIngredients = urlParams.get('ingredients');
+      
       function scrollToBottom() { chatArea.scrollTop = chatArea.scrollHeight; }
       function escapeHtml(str) {
         return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -147,6 +152,17 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
         return res.json();
       }
+      
+      // Auto-send if ingredients are pre-loaded
+      if (preloadedIngredients) {
+        const ingredientsMessage = "I have these ingredients: " + preloadedIngredients;
+        userInput.value = ingredientsMessage;
+        // Auto-submit after a short delay
+        setTimeout(() => {
+          chatForm.dispatchEvent(new Event('submit'));
+        }, 500);
+      }
+      
       chatForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const message = userInput.value.trim();
@@ -181,6 +197,7 @@ def home():
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
+    """Regular chat endpoint - used by the chat interface"""
     data = request.get_json(force=True)
     user_message = (data.get("message") or "").strip()
     history = data.get("history") or []
@@ -212,6 +229,67 @@ def chat():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/recipes-from-ingredients", methods=["POST"])
+def recipes_from_ingredients():
+    """
+    New endpoint for grocery app integration
+    Accepts a list of ingredients and returns recipe suggestions
+    
+    Request body:
+    {
+      "ingredients": ["chicken", "tomatoes", "onions"],
+      "preferences": {
+        "spice_level": "medium",  // optional: mild, medium, spicy
+        "diet": "regular",         // optional: regular, vegetarian
+        "time": "30 mins"          // optional: cooking time preference
+      }
+    }
+    """
+    data = request.get_json(force=True)
+    ingredients = data.get("ingredients", [])
+    preferences = data.get("preferences", {})
+    
+    if not ingredients or not isinstance(ingredients, list):
+        return jsonify({"error": "ingredients array is required"}), 400
+    
+    # Build the query message
+    ingredients_str = ", ".join(ingredients)
+    message = f"I have these ingredients from my grocery: {ingredients_str}."
+    
+    # Add preferences if provided
+    if preferences.get("spice_level"):
+        message += f" I prefer {preferences['spice_level']} spice level."
+    if preferences.get("diet"):
+        message += f" I want {preferences['diet']} recipes."
+    if preferences.get("time"):
+        message += f" I have about {preferences['time']} for cooking."
+    
+    message += " Can you suggest some Pakistani recipes I can make?"
+    
+    # Generate response
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=[{"role": "user", "parts": [{"text": message}]}],
+            config={
+                "system_instruction": SYSTEM_INSTRUCTION,
+                "temperature": 0.7,
+                "max_output_tokens": 2048,
+            },
+        )
+        
+        return jsonify({
+            "success": True,
+            "query": message,
+            "response": response.text or "",
+            "ingredients_used": ingredients
+        })
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/health")
 def health():
